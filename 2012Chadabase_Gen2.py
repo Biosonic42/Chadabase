@@ -537,15 +537,12 @@ class Entry():
         self.TeleHydScore = self.TeleScore + self.HydScore
         # Team defensive / assistive / offensive
         self.IsOffensive = True if Self.OffensiveScore else False
-        self.IsDefensive = True if Self.Defensive else False            # dont see the point, just self.Defensive,
-                                                                        # why do we need another variable?
-        self.IsAssistive = True if Self.Assist else False               # same here
+        self.IsDefensive = Self.Defensive
+        self.IsAssistive = Self.Assist
 
     def secondary_sort(self,oppAvg,oppOff,allAvg,allOff,allDef,allAst):
-        if self.Defensive: self.DefScore = (oppAvg - oppOff) / allDef
-        else: self.DefScore = 0
-        if self.Assist: self.AstScore = (allOff - allAvg) / allAst
-        else: self.AstScore = 0
+        self.DefScore = (oppAvg - oppOff) / allDef if self.Defensive else 0
+        self.AstScore = (allOff - allAvg) / allAst if self.Assist else 0
 
     def tertiary_sort(self):
         self.Total = self.DefScore + self.AstScore + self.OffensiveScore
@@ -688,7 +685,7 @@ class Team():
         else: self.AvgHyd = 0
         if self.HadTele:
             self.AvgTele = sum(self.TeleScores)/len(self.Matches)
-            self.BallsRatio = sum(self.BallScores)/len(self.BallsPU) # what exatcly is this?
+            self.BallsRatio = sum(self.BallScores)/len(self.BallsPU)
         else:
             self.AvgTele = 0
             self.BallsRatio = 0
@@ -1317,7 +1314,7 @@ def team_data():
     #else: tabnum = 0
     for Textbox in Tab1_TextBoxes:
         if Textbox.Type == "tnum":
-            if Textbox.value is not None:
+            if not Textbox.value:
                 try:
                     if not int(Textbox.value): Textbox.value = tabnum    # make current team number value if it is 0
                     elif int(Textbox.value) != tabnum:                   # do updates
@@ -1338,7 +1335,7 @@ def team_data():
         teamdata = 0
         for Team in Teams:
             teamdata = team if Team.Number == tabnum else 0
-        if teamdata != 0:
+        if teamdata:
             for Textbox in Tab1_Textboxes:
                 if   Textbox.type == "nmat": Textbox.value = str(len(teamdata.Matches))
                 elif Textbox.type == "poff": Textbox.value = str(int(100*teamdata.NumOff/len(teamdata.Matches))) + "%"
@@ -1481,7 +1478,7 @@ def team_pitdata():
         TNum = TNums[0]
     for Textbox in Tab2_TextBoxes:
         if Textbox.type == "tnum":
-            if Textbox.value is not None:
+            if not Textbox.value:
                 try:
                     if not int(Textbox.value): Textbox.value = tabnum       # if value is 0, make it current team number
                     elif int(Textbox.value) != tabnum:                      # number has been changed, do updates
@@ -1501,7 +1498,7 @@ def team_pitdata():
         teamdata = 0
         for Team in Teams:
             teamdata = Team if Team.Number == tabnum else 0
-        if teamdata != 0:
+        if teamdata:
             for Textbox in Tab2_Textboxes:
                 if   Textbox.type == "rbln": Textbox.value = str(teamdata.RobotLength)
                 elif Textbox.type == "rbwd": Textbox.value = str(teamdata.RobotWidth)
@@ -1540,3 +1537,204 @@ def team_pitdata():
 # Ratings Functions
 # -- delivers team ratings based upon user preferences
 #---------------------------------------------------------------------------------------------------------
+def ratings():
+    global Teams
+    global screen, HEIGHT, BGCOLOR, TXCOLOR
+    global Tab3_Scrolls, Tab3_Buttons
+    global off_rank, def_rank, ast_rank, tot_rank
+    run = False
+
+    # draw avg offensive score
+    font = pygame.font.Font(None,20)
+    text = font.render("Avg Offensive Score",True,TXCOLOR,BGCOLOR)
+    screen.blit(text(160,65))
+    # draw Avg Off
+    font = pygame.font.Font(None,20)
+    x = 0
+    y = 0
+    i = 0
+    Tab3_Scrolls[0].surface.fill(BGCOLOR)
+    for rank in off_rank:
+        i += 1
+        text = font.render("#"+str(i)+"--Team "+str(rank[1])+": "+str(rank[0]),True,TXCOLOR,BGCOLOR)
+        Tab3_Scrolls[0].surface.blit(text,(x,y))
+        y+=20
+        for Team in Teams:
+            if Team.Number == rank[1]: Team.off_rank = i
+    Tab3_Scrolls[0].draw(screen)
+    pygame.draw.line(screen,(0,0,0),(302,65),(302,HEIGHT),1)
+
+    # draw average defensive
+    font = pygame.font.Font(None,20)
+    text = font.render("Avg Defensive Score",True,TXCOLOR,BGCOLOR)
+    screen.blit(text,(305,65))
+    # draw avg def
+    x = 0
+    y = 0
+    i = 0
+    Tab3_Scrolls[1].surface.fill(BGCOLOR)
+    for rank in def_rank:
+        i += 1
+        text = font.render("#"+str(i)+"--Team "+str(rank[1])+": "+str(rank[0]),True,TXCOLOR,BGCOLOR)
+        Tab3_Scrolls[1].surface.blit(text,(x,y))
+        y+=20
+        for Team in Teams:
+            if Team.Number == rank[1]: Team.def_rank = i
+    Tab3_Scrolls[1].draw(screen)
+    pygame.draw.line(screen,(0,0,0),(450,65),(450,HEIGHT),1)
+
+    # draw avgerage assistive score
+    font = pygame.font.Font(None,20)
+    text = font.render("Avg Assistive Score",True,TXCOLOR,BGCOLOR)
+    screen.blit(text,(460,65))
+    # draw avg ast
+    x = 0
+    y = 0
+    i = 0
+    Tab3_Scrolls[2].surface.fill(BGCOLOR)
+    for rank in ast_rank:
+        i += 1
+        text = font.render("#"+str(i)+"--Team "+str(rank[1])+": "+str(rank[0]),True,TXCOLOR,BGCOLOR)
+        Tab3_Scrolls[2].surface.blit(text,(x,y))
+        y+=20
+        for Team in Teams:
+            if Team.Number == rank[1]: Team.ast_rank = i
+    Tab3_Scrolls[2].draw(screen)
+    pygame.draw.line(screen,(0,0,0),(605,65),(605,HEIGHT),1)
+
+    # draw avgerage total score
+    font = pygame.font.Font(None,20)
+    text = font.render("Avg Total Score",True,TXCOLOR,BGCOLOR)
+    screen.blit(text,(607,65))
+    # draw avg tot
+    x = 0
+    y = 0
+    i = 0
+    Tab3_Scrolls[3].surface.fill(BGCOLOR)
+    for rank in tot_rank:
+        i += 1
+        text = font.render("#"+str(i)+"--Team "+str(rank[1])+": "+str(rank[0]),True,TXCOLOR,BGCOLOR)
+        Tab3_Scrolls[3].surface.blit(text,(x,y))
+        y+=20
+        for Team in Teams:
+            if Team.Number == rank[1]: Team.tot_rank = i
+    Tab3_Scrolls[3].draw(screen)
+    pygame.draw.line(screen,(0,0,0),(750,65),(750,HEIGHT),1)
+
+    #update scroller buttons
+    for button in Tab3_Buttons:
+        button.draw(screen)
+    for button in Tab3_Buttons:
+        if mbut[0] == 1:
+            if button.x<=cmpos[0]<=button.x+button.w and button.y<=cmpos[1]<=button.y+button.h:
+                if button.type == "ofup":
+                    Tab3_Scrolls[0].update(True)
+                elif button.type == "ofdo":
+                    Tab3_Scrolls[0].update(False)
+                if button.type == "deup":
+                    Tab3_Scrolls[1].update(True)
+                elif button.type == "dedo":
+                    Tab3_Scrolls[1].update(False)
+                if button.type == "atup":
+                    Tab3_Scrolls[2].update(True)
+                elif button.type == "atdo":
+                    Tab3_Scrolls[2].update(False)
+                if button.type == "toup":
+                    Tab3_Scrolls[3].update(True)
+                elif button.type == "todo":
+                    Tab3_Scrolls[3].update(False)
+
+#---------------------------------------------------------------------------------------------------------
+# Ratings 2 Function
+# -- delivers team ratings based off user preferances
+#---------------------------------------------------------------------------------------------------------
+def ratings2():
+    global Teams
+    global screen, HEIGHT, BGCOLOR, TXCOLOR
+    global Tab4_Scrolls, Tab4_Buttons
+    global hyb_rank, off_rank, brd_rank
+    run = False
+
+    # draw avgerage Hybrid score
+    font = pygame.font.Font(None,20)
+    text = font.render("Avg Hybrid Score",True,TXCOLOR,BGCOLOR)
+    screen.blit(text,(160,65))
+    # draw avg hyd
+    x = 0
+    y = 0
+    i = 0
+    Tab4_Scrolls[0].surface.fill(BGCOLOR)
+    for rank in hyb_rank:
+        i += 1
+        text = font.render("#"+str(i)+"--Team "+str(rank[1])+": "+str(rank[0]),True,TXCOLOR,BGCOLOR)
+        Tab4_Scrolls[0].surface.blit(text,(x,y))
+        y+=20
+        for Team in Teams:
+            if Team.Number == rank[1]: Team.hyd_rank = i
+    Tab4_Scrolls[0].draw(screen)
+    pygame.draw.line(screen,(0,0,0),(302,65),(302,HEIGHT),1)
+    
+    # draw avgerage tele score
+    font = pygame.font.Font(None,20)
+    text = font.render("Avg Tele Score",True,TXCOLOR,BGCOLOR)
+    screen.blit(text,(305,65))
+    # draw avg tel
+    x = 0
+    y = 0
+    i = 0
+    Tab4_Scrolls[1].surface.fill(BGCOLOR)
+    for rank in tel_rank:
+        i += 1
+        text = font.render("#"+str(i)+"--Team "+str(rank[1])+": "+str(rank[0]),True,TXCOLOR,BGCOLOR)
+        Tab4_Scrolls[1].surface.blit(text,(x,y))
+        y+=20
+        for Team in Teams:
+            if Team.Number == rank[1]: Team.tel_rank = i
+    Tab4_Scrolls[1].draw(screen)
+    pygame.draw.line(screen,(0,0,0),(450,65),(450,HEIGHT),1)
+
+    # draw avgerage bridge score
+    font = pygame.font.Font(None,20)
+    text = font.render("Avg Bridge Score",True,TXCOLOR,BGCOLOR)
+    screen.blit(text,(460,65))
+    # draw avg brd
+    x = 0
+    y = 0
+    i = 0
+    Tab4_Scrolls[2].surface.fill(BGCOLOR)
+    for rank in brd_rank:
+        i += 1
+        text = font.render("#"+str(i)+"--Team "+str(rank[1])+": "+str(rank[0]),True,TXCOLOR,BGCOLOR)
+        Tab4_Scrolls[2].surface.blit(text,(x,y))
+        y+=20
+        for Team in Teams:
+            if Team.Number == rank[1]: Team.brd_rank = i
+    Tab4_Scrolls[2].draw(screen)
+    pygame.draw.line(screen,(0,0,0),(605,65),(605,HEIGHT),1)
+
+    # draw buttons
+    for button in Tab4_Buttons:
+        button.draw(screen)
+    for button in Tab4_Buttons:
+        if button.x<=cmpos[0]<=button.x+button.w and button.y<=cmpos[1]<=button.y+button.h:
+            if button.type == "hyup":
+                Tab4_Scrolls[0].update(True)
+            elif button.type == "hydo":
+                Tab4_Scrolls[0].update(False)
+            if button.type == "teup":
+                Tab4_Scrolls[1].update(True)
+            elif button.type == "tedo":
+                Tab4_Scrolls[1].update(False)
+            if button.type == "bgup":
+                Tab4_Scrolls[2].update(True)
+            elif button.type == "bgdo":
+                Tab4_Scrolls[2].update(False)
+
+#---------------------------------------------------------------------------------------------------------
+# Search Function
+# -- allows user to access teams based off specific preferances
+#---------------------------------------------------------------------------------------------------------
+
+                
+                
+    
