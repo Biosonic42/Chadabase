@@ -1,7 +1,10 @@
-# Database program - gets DS data files and gives statistics
-# 2nd Gen - 0.0
+# Database Program - gets DS data files and gives statistics
+# 2nd Gen - 0.1
 # To Do:
 #   improve on 1st Gen functionality
+#       -- textbox functionality on what to display on which tab
+#       -- button functionality
+#       -- 
 
 #imports
 import math
@@ -19,7 +22,7 @@ pygame.init()
 # Main variables
 running = True
 DataCalc = False            # bool of data imported being calculated.  If !DataCalc: no view team data
-PitDataCalc = False
+PitDataCalc = False         # bool of pitdata imported being calculated.  if !PitDataCalc: no view pit data
 HEIGHT = 700                # height of window (in pixels)
 WIDTH = 1100                # width of window (in pixels)
 INIT_X = 160                # initial x coordinate for the tab
@@ -34,7 +37,7 @@ root.withdraw()
 
 #screen display
 screen = pygame.display.set_mode((WIDTH,HEIGHT))#,pygame.FULLSCREEN)
-pygame.display.set_caption("Chadabase 2nd Gen Ver0.0 - Lewis Compilation")
+pygame.display.set_caption("Chadabase 2nd Gen Ver0.1 - Lewis Compilation")
 
 tab = 0                     # the tab displayed:
                             # 0 - blank
@@ -76,7 +79,7 @@ Tab4_Scrolls = []           # Tab 4 scrollers
 Tab4_Buttons = []           # Tab 4 Buttons for scrolling
 
 #search
-Tab5_Contents = []          # Textboxes and radio buttons
+Tab5_Stuff = []             # Textboxes and radio buttons
 Tab5_Scroll = 0             # Tab 5's scroller; create later before main loop
 Tab5_WantScroll = 0         # Tab 5's wanted teams scroller; create later before main loop
 Tab5_TempButton = []        # Temporary buttons
@@ -97,7 +100,7 @@ Wanted = []                 # list of teams we want on our alliance
 
 #Choose
 Tab7_TextBoxes = []         # Tab 7 tex boxes
-Tab7_Scrolls = []           # Tab 7 scroller - shows wanted teams (not selected)
+Tab7_Scroll = 0             # Tab 7 scroller - shows wanted teams (not selected)
 Tab7_Buttons = []           # Tab 7 buttons
 Tab7_Update = True          # update Tab 7, preset to 1 for initial update
 Tab7_Surface = pygame.Surface((WIDTH-INIT_X,HEIGHT-INIT_Y)) # improves framerate
@@ -108,7 +111,7 @@ accessinfo = ""             # a file that can be opened in access will be create
 
 #Ranking Info
 
-    #score categories (?)
+    #score categories(?)
 r1o = r1d = r1a = r1bb = r1tb = r1bs = r1ab = r1bo = r1md = r1tp = r1hh = r1hs = r1po = r1pd = r1pa = 0
 r2o = r2d = r2a = r2bb = r2tb = r2bs = r2ab = r2bo = r2md = r2tp = r2hh = r2hs = r2po = r2pd = r2pa = 0
 r3o = r3d = r3a = r3bb = r3tb = r3bs = r3ab = r3bo = r3md = r3tp = r3hh = r3hs = r3po = r3pd = r3pa = 0
@@ -116,18 +119,18 @@ b1o = b1d = b1a = b1bb = b1tb = b1bs = b1ab = b1bo = b1md = b1tp = b1hh = b1hs =
 b2o = b2d = b2a = b2bb = b2tb = b2bs = b2ab = b2bo = b2md = b2tp = b2hh = b2hs = b2po = b2pd = b2pa = 0
 b3o = b3d = b3a = b3bb = b3tb = b3bs = b3ab = b3bo = b3md = b3tp = b3hh = b3hs = b3po = b3pd = b3pa = 0
     #----------------------
-r1 = r2 = r3 = b1 = b2 = b3 = 0                                                     #team numbers (?)
+r1 = r2 = r3 = b1 = b2 = b3 = 0                                                     #team numbers
 r1t = r2t = r3t = b1t = b2t = b3t = 0                                               #average total scores
-r1ts = r2ts = r3ts = b1ts = b2ts = b3ts = 0                                         #total scores for each team
+r1ts = r2ts = r3ts = b1ts = b2ts = b3ts = []                                        #total scores for each team
 
-Off_Rank = []
-Def_Rank = []
-Ast_Rank = []
-Tot_Rank = []
+off_rank = []
+def_rank = []
+ast_rank = []
+tot_rank = []
 
-Hyd_Rank = []
-Tele_Rank = []
-Brdg_Rank = []
+hyb_rank = []
+tel_rank = []
+brd_rank = []
 
 Team_List = []              # Made global so that button and radio button objects can be created in search tab
 Old_List = []               # Old team list; compare to Team_List to see if update needed
@@ -182,9 +185,9 @@ class lreg():
             self.r2 = sum(hmy2)/sum(ymh2)
         except:
             self.r2 = "N\A"
-    def get_image(self,sx,sy,bgcolor,txcolor,stx=20,sty=20):
+    def get_image(self,sx,sy,BGCOLOR,TXCOLOR,stx=20,sty=20):
         self.surface = pygame.Surface((sx,sy))
-        self.surface.fill(bgcolor)
+        self.surface.fill(BGCOLOR)
         self.tx = [] # x coordinates modified to fit
         self.ty = [] # y coordinates modified to fit
         maxy = 0
@@ -233,11 +236,11 @@ class lreg():
         #Flip and add text
         newsurface = pygame.transform.flip(self.surface,0,1)
         font = pygame.font.Font(None,stx)
-        text = font.render(str(ymax),True,txcolor,bgcolor)
+        text = font.render(str(ymax),True,TXCOLOR,BGCOLOR)
         newsurface.blit(text,(0,.5*stx))
-        text = font.render(str(xmax),True,txcolor,bgcolor)
+        text = font.render(str(xmax),True,TXCOLOR,BGCOLOR)
         newsurface.blit(text,(sx-.5*stx,sy-stx))
-        text = font.render("r^2="+str(self.r2),True,txcolor,bgcolor)
+        text = font.render("r^2="+str(self.r2),True,TXCOLOR,BGCOLOR)
         newsurface.blit(text,(0,sy-stx))
         return newsurface 
 
@@ -282,26 +285,26 @@ class Checkbox():
         self.text = font.render(self.caption,True,TXCOLOR,BGCOLOR)
         self.w = pygame.Surface.get_width(self.text)
         self.check = check
-        self.teamnum = teamnumn # only used in search tab; no other use
+        self.teamnum = teamnum # only used in search tab; no other use
     def draw(self,screen):
         if self.check: # clicked
             if self.flip:   # text to right
-                pygame.draw.circle(screen,(0,0,0),(self.x+.5*self.size,self.y+.4*self.size),
-                                   .25*self.size,0)
+                pygame.draw.circle(screen,(0,0,0),(self.x+int(.5*self.size),self.y+int(.4*self.size)),
+                                   int(.25*self.size),0)
                 screen.blit(self.text,(self.x+self.size,self.y))
             else:           # text to left
-                pygame.draw.circle(screen,(0,0,0),(self.x+self.w+.5*self.size,self.y+.4*self.size),
-                                   .25*self.size,0)
+                pygame.draw.circle(screen,(0,0,0),(self.x+self.w+int(.5*self.size),self.y+int(.4*self.size)),
+                                   int(.25*self.size),0)
                 screen.blit(self.text,(self.x,self.y))
         else:           # not clicked
             if self.flip:   # text to right
-                pygame.draw.circle(screen,(0,0,0),(self.x+.5*self.size,self.y+.4*self.size),
-                                   .25*self.size,.1*self.size)
                 screen.blit(self.text,(self.x+self.size,self.y))
+                pygame.draw.circle(screen,(0,0,0),(self.x+int(.5*self.size),self.y+int(.4*self.size)),
+                                   int(.25*self.size),int(.1*self.size))
             else:           # text to left
-                pygame.draw.circle(screen,(0,0,0),(self.x+self.w+.5*self.size,self.y+.4*self.size),
-                                   .25*self.size,.1*self.size)
                 screen.blit(self.text,(self.x,self.y))
+                pygame.draw.circle(screen,(0,0,0),(self.x+self.w+int(.5*self.size),self.y+int(.4*self.size)),
+                                   int(.25*self.size),int(.1*self.size))
     def click(self):
         self.check = not(self.check) # opposite of whatever it was before
 
@@ -324,7 +327,7 @@ class Textbox():
         self.th = thickness
         self.type = t
         font = pygame.font.Font(None,self.size)
-        self.text = fon.render(self.caption,True,TXCOLOR,BGCOLOR)
+        self.text = font.render(self.caption,True,TXCOLOR,BGCOLOR)
         self.cw = pygame.Surface.get_width(self.text)
         self.ch = pygame.Surface.get_height(self.text)
         if self.click:
@@ -340,7 +343,7 @@ class Textbox():
         pygame.draw.rect(screen, self.color, (self.x+self.cw+.5*self.th,
                                               self.y+.5*self.th,self.w+.5*self.th,self.size+.5*self.th-10),
                          self.th)
-        f2 = pygame.fontFont(None,self.size-self.th)    #account for thickness in rectangle
+        f2 = pygame.font.Font(None,self.size-self.th)    #account for thickness in rectangle
         intxt = f2.render(str(self.value),True,TXCOLOR,BGCOLOR)
         screen.blit(intxt,(self.x+self.cw+self.th,self.y+self.th))
     def clicked(self):
@@ -349,7 +352,7 @@ class Textbox():
         global WIDTH
         global HEIGHT
         if self.click:
-            foot.focus()
+            root.focus()
             newval = tkSimpleDialog.askstring("New Value","_",parent=root,initialvalue=0)
             root.withdraw()
             if newval == "": newval = 0
@@ -371,13 +374,13 @@ class Button():
         self.h = h
         self.w = w
         self.text = text
-        self.size = size
+        self.size = font
         self.type = t
         self.static = 1
         self.th = thickness
         font = pygame.font.Font(None,self.size)
         self.text = font.render(self.text,True,TXCOLOR,BGCOLOR)
-        if not w: self.w = pygame.Surface.get_width(self.texT)
+        if not w: self.w = pygame.Surface.get_width(self.text)
         else:   self.w = w
         if not h: self.h = pygame.Surface.get_height(self.text)
         else:   self.h = h
@@ -610,7 +613,7 @@ class Team():
         self.NumAst = 0                 # NumMatches played assistive
         self.HadHyd = 0                 # NumMatches HadHybrid
         self.OffenseTele = 0            # NumMatches Team Scored in Tele
-        self.MatchesState = 0           # Team wasDisabled State each match
+        self.DisabledState = []         # Team wasDisabled State each match
         self.Disabled = 0               # NumMatches Disabled
         self.DisabledCount = 0          # NumTimes Disabled Total
         self.AvgRegFoul = []            # NumFouls of regular type each match
@@ -637,13 +640,13 @@ class Team():
         self.Defense = 0                # NumMatches was defensive
         self.Assist = 0                 # NumMatches was assistive
         self.off_rank = 0               # ranks among all teams
-        self.def_rank = 0
-        self.ast_rank = 0
-        self.tot_rank = 0
-        self.hyb_rank = 0
-        self.tel_rank = 0
-        self.brd_rank = 0
-        self.matchplay = []             
+        self.def_rank = 0               #  |
+        self.ast_rank = 0               #  |
+        self.tot_rank = 0               #  |
+        self.hyb_rank = 0               #  |
+        self.tel_rank = 0               #  |
+        self.brd_rank = 0               #  |
+        self.matchplay = []             # \ /           
         self.RobotLength = 0            # pit stats, length, drivers, etcetera
         self.RobotWidth = 0
         self.RobotHeight = 0
@@ -1313,8 +1316,8 @@ def team_data():
         TNum = TNums[0]
     #else: tabnum = 0
     for Textbox in Tab1_TextBoxes:
-        if Textbox.Type == "tnum":
-            if not Textbox.value:
+        if Textbox.type == "tnum":
+            if Textbox.value is not None:
                 try:
                     if not int(Textbox.value): Textbox.value = tabnum    # make current team number value if it is 0
                     elif int(Textbox.value) != tabnum:                   # do updates
@@ -1455,10 +1458,10 @@ def team_data():
 
     # Check for changes requested from clicks
     for Textbox in Tab1_TextBoxes:
-        x = TextBox.x+Textbox.cw+Textbox.th+INIT_X
-        y = TextBox.y+.5*Textbox.th+INIT_Y
+        x = Textbox.x+Textbox.cw+Textbox.th+INIT_X
+        y = Textbox.y+.5*Textbox.th+INIT_Y
         if x+Textbox.w+.5*Textbox.th >= mpos[0] >= x and y+Textbox.size+.5*Textbox.th-10 >= mpos[1] >= y:
-            texbox.clicked()
+            Textbox.clicked()
 
 #---------------------------------------------------------------------------------------------------------
 # Team Pit Data Function
@@ -1478,7 +1481,7 @@ def team_pitdata():
         TNum = TNums[0]
     for Textbox in Tab2_TextBoxes:
         if Textbox.type == "tnum":
-            if not Textbox.value:
+            if Textbox.value is not None:
                 try:
                     if not int(Textbox.value): Textbox.value = tabnum       # if value is 0, make it current team number
                     elif int(Textbox.value) != tabnum:                      # number has been changed, do updates
@@ -1499,7 +1502,7 @@ def team_pitdata():
         for Team in Teams:
             teamdata = Team if Team.Number == tabnum else 0
         if teamdata:
-            for Textbox in Tab2_Textboxes:
+            for Textbox in Tab2_TextBoxes:
                 if   Textbox.type == "rbln": Textbox.value = str(teamdata.RobotLength)
                 elif Textbox.type == "rbwd": Textbox.value = str(teamdata.RobotWidth)
                 elif Textbox.type == "rbhg": Textbox.value = str(teamdata.RobotHeight)
@@ -1527,9 +1530,9 @@ def team_pitdata():
     screen.blit(Tab2_Surface,(INIT_X,INIT_Y))
     
     # linear regression and other stuff
-    for Textbox in Tab2_Textboxes:
-        x = TextBox.x+Textbox.cw+Textbox.th+INIT_X
-        y = TextBox.y+.5*Textbox.th+INIT_Y
+    for Textbox in Tab2_TextBoxes:
+        x = Textbox.x+Textbox.cw+Textbox.th+INIT_X
+        y = Textbox.y+.5*Textbox.th+INIT_Y
         if x+Textbox.w+.5*Textbox.th >= mpos[0] >= x and y+Textbox.size+.5*Textbox.th-10 >= mpos[1] >= y:
             texbox.clicked()
 
@@ -1547,7 +1550,7 @@ def ratings():
     # draw avg offensive score
     font = pygame.font.Font(None,20)
     text = font.render("Avg Offensive Score",True,TXCOLOR,BGCOLOR)
-    screen.blit(text(160,65))
+    screen.blit(text,(160,65))
     # draw Avg Off
     font = pygame.font.Font(None,20)
     x = 0
@@ -1734,7 +1737,1096 @@ def ratings2():
 # Search Function
 # -- allows user to access teams based off specific preferances
 #---------------------------------------------------------------------------------------------------------
+def search():
+    global Screen, mpos, tab, tabnum, TXCOLOR, BGCOLOR, HEIGHT
+    global Tab5_Stuff, Tab5_Scroll, Tab5_WantScroll, Tab5_TempButton, \
+           Tab5_TempCB, Tab5_WantedBut, Tab5_WantedCB, Tab5_UpdateWanted, \
+           Tab5_Update, Tab5_ReDraw, Tab5_WantedMoveBut, Tab5_Buttons
+    global Teams, Team_List, Old_List, Wanted, Available_Teams, \
+           Tab7_Update, Tab2_TextBoxes
 
-                
-                
+    # Add title text for each scroller
+    font = pygame.font.Font(None,20)
+    text = font.render(" Matches: ",True,TXCOLOR,BGCOLOR)
+    screen.blit(text,(510,65))
+    text = font.render(" Alliance Wanted List: ",True,TXCOLOR,BGCOLOR)
+    screen.blit(text,(625,65))
+
+    # add tempbut and tempCB to scroller image; only change if update needed
+    if Tab5_Update or Tab5_ReDraw:
+        Tab5_Scroll.surface = pygame.Surface((180,2000))    # Reset surface
+        Tab5_Scroll.surface.fill(BGCOLOR)
+        for button in Tab5_TempButton:
+            button.draw(Tab5_Scroll.surface)
+        for checkbox in Tab5_TempCB:
+            checkbox.draw(Tab5_Scroll.surface)
+        Tab5_Update = False
+
+    # Draw the scroller image
+    Tab5_Scroll.draw(screen)
+
+    # Add WantedBut and WantedCB to WantedScroll image; only change if update needed
+    if Tab5_UpdateWanted:
+        Tab5_WantScroll.surface = pygame.Surface((180,2000)) # Reset surface
+        Tab5_WantScroll.surface.fill(BGCOLOR)
+        for button in Tab5_WantedBut:
+            button.draw(Tab5_WantScroll.surface)
+        for checkbox in Tab5_WantedCB:
+            checkbox.draw(Tab5_WantScroll.surface)
+        Tab5_UpdateWanted = False
+
+    # Draw the scroller image
+    Tab5_WantScroll.draw(screen)
+
+    # Draw Buttons
+    for button in Tab5_Buttons:
+        button.draw(screen)
+
+    # Detect button clicks
+    nx = mpos[0] - Tab5_WantScroll.x
+    ny = mpos[1] - Tab5_WantScroll.y + Tab5_WantScroll.currenty
+
+    for button in Tab5_WantedMoveBut:
+        if button.x<=nx<=button.x+button.w and button.y<=ny<=button.y+button.h and \
+           button.y + button.h < Tab5_Scroll.currenty+Tab5_Scroll.maxh and button.y > Tab5_Scrolls.currenty:
+            number = ""
+            t = ""
+            counter = 0
+            while counter < len(button.type):
+                try:
+                    int(button.type[counter])           # continue if integer
+                    number+= button.type[counter]
+                except:
+                    t += button.type[counter]
+                counter += 1
+
+            if t== "up":                                # move the rank of the team up; the rank of the team above it down
+                for te in Wanted:
+                    if te[1][0] == int(number):         # Is the team?
+                        rank = te[0]
+                        print "Our rank was:" + str(rank)
+                for te in Wanted:                       # First, move the rank of the other team down; prevents errors
+                    if te[0] == rank+1:                 # Is the rank the team is a/b to replace?
+                        te[0] = rank
+                for te in Wanted:
+                    if te[1][0] == int(number):
+                        te[0] += 1
+                        print "Our rank is now" + str(te[0])
+                Tab5_UpdateWanted = True
+            if t=="do":                                 # move the rank of the team down; the rank of the team above it up
+                for te in Wanted:
+                    if te[1][0] == int(number):         # Is the team
+                        rank = te[0]
+                        print "Our rank was:" + str(rank)
+                for te in Wanted:                       # First, move the rank of the other team down; prevents errors
+                    if te[0] == rank-1:                 # Is the rank the team is a/b to replace
+                        te[0] = rank
+                for te in Wanted:
+                    if te[1][0] == int(number):
+                        te[0] -= 1
+                        print "Our rank is now:" + str(te[0])
+                Tab5_UpdateWanted = True
+
+    for button in Tab5_Buttons:
+        if mbut[0] == 1:
+            if button.x<=cmpos[0]<=button.x+button.w and button.y<=cmpos[1]<=button.y+button.h:
+                if button.type == "tlup":
+                    Tab5_Scroll.update(True)
+                elif button.type == "tldo":
+                    Tab5_Scroll.update(False)
+                elif button.type == "wlup":
+                    Tab5_WantScroll.update(True)
+                elif button.type == "wldo":
+                    Tab5_WantScroll.update(False)
+
+    nx = mpos[0] - Tab5_Scroll.x
+    ny = mpos[1] - Tab5_Scroll.y + Tab5_Scroll.currenty
+
+    # if team number button is clicked, display the team tab with that teams data
+    for button in Tab5_TempButton:
+        if button.x<=nx<=button.y+button.w and button.y<=ny<=button.y+button.h and \
+           button.y+button.h < Tab5_Scroll.currenty + Tab5Scroll.maxh and button.y > Tab5_Scroll.currenty:
+            # open team data in other tab
+            for textbox in Tab1_TextBoxes:
+                if textbox.type == "tnum":
+                    textbox.value = button.type
+            tabnum = int(button.type)
+            tab = 1
+
+    for cb in Tab5_TempCB:
+        if cb.flip:         # button to the left:
+            if cb.x+.75*cb.size>=nx>=cb.x+.25*cb.size and \
+               cb.y+.75*cb.size>=ny>=cb.y+.25*cb.size:
+                if not cb.check:
+                    for t in Team_List:
+                        if t[0] == cb.teamnum:       # add team to wanted list
+                            Wanted.append([len(Wanted)+1,t])
+                            Tab7_Update = True
+                        cb.click()
+                        cb.draw(Tab5_Scroll.surface)
+                        Tab5_UpdateWanted = True
+                        Tab5_ReDraw = True
+                else:       # Already Selected; now, deselect and remove from wanted list
+                    for t in Team_List:
+                        if t[0] == cb.teamnum:
+                            i = 0
+                            while i < len(Wanted):
+                                if wanted[i][1][0] == cb.teamnbum:
+                                    del Wanted[i]
+                                    i -= 1
+                                i += 1
+                    cb.click()
+                    cb.draw(Tab5_Scroll.surface)
+                    Tab5_UpdateWanted = True
+                    Tab5_ReDraw = True
+        else:         # button to the right:
+            if cb.x+item.w+.75*cb.size>=nx>=cb.x+item.w+.25*cb.size and \
+               cb.y+.75*cb.size>=ny>=cb.y+.25*cb.size:
+                if not cb.check:
+                    for t in Team_List:
+                        if t[0] == cb.teamnum:       # add team to wanted list
+                            Wanted.append([len(Wanted)+1,t])
+                            Tab7_Update = True
+                        cb.click()
+                        cb.draw(Tab5_Scroll.surface)
+                        Tab5_UpdateWanted = True
+                        Tab5_ReDraw = True
+                else:       # Already Selected; now, deselect and remove from wanted list
+                    for t in Team_List:
+                        if t[0] == cb.teamnum:
+                            i = 0
+                            while i < len(Wanted):
+                                if wanted[i][1][0] == cb.teamnbum:
+                                    del Wanted[i]
+                                    i -= 1
+                                i += 1
+                    cb.click()
+                    cb.draw(Tab5_Scroll.surface)
+                    Tab5_UpdateWanted = True
+                    Tab5_ReDraw = True
+
+    #click events
+    for item in Tab5_Stuff:
+        try:        # for checkboxes
+            if item.flip:       # button to left:
+                if item.x+.75*item.size>=mpos[0]>=item.x+.25*item.size and \
+                   item.y+.75*item.size>=mpos[1]>=item.y+.25*item.size:
+                    item.click()
+            else:               # button to right
+                if item.x+item.w+.75*item.size>=mpos[0]>=item.x+item.w+.25*item.size and \
+                    item.y+.75*item.size>=mpos[1]>=item.y+.25*item.size:
+                    item.click()
+        except:     # for textboxes
+        # See if any changes are requested from clicks
+            x = item.x+item.cw+item.th
+            y = item.y+.5*item.th
+            if x+item.w+.5*item.th>=mpos[0]>=x and \
+               y+item.size+.5*item.th-10>=mpos[1]>=y:
+               # click event
+               item.clicked()
+
+    #draw
+    for item in Tab5_Stuff:
+        item.draw(screen)
+    pygame.draw.line(screen,(0,0,0),(500,65),(500,HEIGHT),5)
+    pygame.draw.line(screen,(0,0,0),(620,65),(620,HEIGHT),5)
+
+    # do the search
+    Old_List = []
+    for t in Team_List:
+        Old_List.append(t[0])
+    Old_List.sort()
+    Team_List = []
+    for team in Teams:
+        Team_List.append([team.Number,team])
+    if len(Team_List) > 0:
+        for item in Tab5_Stuff:
+            if item.type == "goff":     #greater than offensive score
+                try:
+                    i = 0
+                    x = len(Team_List)
+                    while i < x:
+                        if Team_List[i][1].AvgOff < int(item.value):
+                            del Team_List[i]
+                            x = len(Team_List)
+                            i -= 1
+                        i += 1
+                except:
+                    item.value = 0
+            elif item.type == "gdef": #greater than defensive score
+                try:
+                    i = 0
+                    x = len(Team_List)
+                    while i < x:
+                        if Team_List[i][1].AvgDef < int(item.value):
+                            del Team_List[i]
+                            x = len(Team_List)
+                            i -= 1
+                        i += 1
+                except:
+                    item.value = 0
+            elif item.type == "gast": #greater than assistive score
+                try:
+                    i = 0
+                    x = len(Team_List)
+                    while i < x:
+                        if Team_List[i][1].AvgAst < int(item.value):
+                            del Team_List[i]
+                            x = len(Team_List)
+                            i -= 1
+                        i += 1
+                except:
+                    item.value = 0
+            elif item.type == "wo": #was offensive for at least 1 match
+                try:
+                    i = 0
+                    x = len(Team_List)
+                    while i < x:
+                        if Team_List[i][i].NumOff < item.check:
+                            del Team_List[i]
+                            x = len(Team_List)
+                            i -= 1
+                        i += 1
+                except:
+                    item.value = 0
+            elif item.type == "wd": #was defensive for at least 1 match
+                try:
+                    i = 0
+                    x = len(Team_List)
+                    while i < x:
+                        if Team_List[i][1].NumDef <item.check:
+                            del Team_List[i]
+                            x = len(Team_List)
+                            i -= 1
+                        i += 1
+                except:
+                    item.value = 0
+            elif item.type == "wa": #was assistive for at least 1 match
+                try:
+                    i = 0
+                    x = len(Team_List)
+                    while i < x:
+                        if Team_List[i][1].NumAst < item.check:
+                            del Team_List[i]
+                            x = len(Team_List)
+                            i -= 1
+                        i += 1
+                except:
+                    item.value = 0
+            elif item.type == "hbsd": #scored in hybrid
+                try:
+                    i = 0
+                    x = len(Team_List)
+                    while i < x:
+                        if Team_List[i][1].HadHyd < item.check:
+                            del Team_List[i]
+                            x = len(Team_List)
+                            i -= 1
+                        i += 1
+                except:
+                    item.value = 0
+            elif item.type == "hylb": #lowered bridge in hybrid
+                try:
+                    i = 0
+                    x = len(Team_List)
+                    while i < x:
+                        if Team_List[i][1].HydLwrBrdg < item.check:
+                            del Team_List[i]
+                            x = len(Team_List)
+                            i -= 1
+                        i += 1
+                except:
+                    item.value = 0
+            elif item.type == "hyat": #assisted in hybrid
+                try:
+                    i = 0
+                    x = len(Team_List)
+                    while i < x:
+                        if Team_List[i][1].HydAssist < item.check:
+                            del Team_List[i]
+                            x = len(Team_List)
+                            i -= 1
+                        i += 1
+                except:
+                    item.value = 0
+            elif item.type == "bdsc": #balaced a bridge successfully
+                try:
+                    i = 0
+                    x = len(Team_List)
+                    while i < x:
+                        if Team_List[i][1].BrdgSuccess < item.check:
+                            del Team_List[i]
+                            x = len(Team_List)
+                            i -= 1
+                        i += 1
+                except:
+                    item.value = 0
+            elif item.type == "tbsc": #balanced the team bridge successfully
+                try:
+                    i = 0
+                    x = len(Team_List)
+                    while i < x:
+                        if Team_List[i][1].TeamBrdgSuccess < item.check:
+                            del Team_List[i]
+                            x = len(Team_List)
+                            i -= 1
+                        i += 1
+                except:
+                    item.value = 0
+            elif item.type == "cbsc": #balanced the Co-op bridge successfully
+                try:
+                    i = 0
+                    x = len(Team_List)
+                    while i < x:
+                        if Team_List[i][1].COBrdgSuccess < item.check:
+                            del Team_List[i]
+                            x = len(Team_List)
+                            i -= 1
+                        i += 1
+                except:
+                    item.value = 0
+            elif item.type == "disn": #never disabled
+                try:
+                    i = 0
+                    x = len(Team_List)
+                    while i < x:
+                        if item.check == 1 and Team_List[i][1].Disabled > 0:
+                            del Team_List[i]
+                            x = len(Team_List)
+                            i -= 1
+                        i += 1
+                except:
+                    item.value = 0
+            elif item.type == "nrfl": #never got a Regular foul
+                try:
+                    i = 0
+                    x = len(Team_List)
+                    while i < x:
+                        if item.check == 1 and Team_List[i][1].HadRegFoul > 0:
+                            del Team_List[i]
+                            x = len(Team_List)
+                            i -= 1
+                        i += 1
+                except:
+                    item.value = 0
+            elif item.type == "ntfl": #never got a Technical foul
+                try:
+                    i = 0
+                    x = len(Team_List)
+                    while i < x:
+                        if item.check == 1 and Team_List[i][1].HadTechFoul > 0:
+                            del Team_List[i]
+                            x = len_list[i]
+                            x = len(Team_List)
+                            i -= 1
+                        i += 1
+                except:
+                    item.value = 0
+            elif item.type == "noye": #no yellow cards
+                try:
+                    i = 0
+                    x = len(Team_List)
+                    while i < x:
+                        if item.check == 1 and Team_List[i][1].HadYellow > 0:
+                            del Team_List[i]
+                            x = len(Team_List)
+                            i -= 1
+                        i += 1
+                except:
+                    item.value = 0
+            elif item.type == "nore": #no red cards
+                try:
+                    i = 0
+                    x = len(Team_List)
+                    while i < x:
+                        if item.check == 1 and Team_List[i][1].HadRed > 0:
+                            del Team_List[i]
+                            x = len(Team_List)
+                            i -= 1
+                        i += 1
+                except:
+                    item.value = 0
+    Team_List.sort()
+    nlist = []
+    for t in Team_List:
+        nlist.append(t[0])
+    nlist.sort()
+    if nlist != Old_List:
+        Tab5_Update = True
+
+    # Deal with the wanted scroller (Tab5_WantScroll)
+    if Tab5_UpdateWanted:
+        Tab5_WantedBut = []
+        Tab5_WantedMoveBut = []
+        y = 5
+        Wanted.sort()
+        n = 0
+        if len(Wanted)>0:
+            while n < len(Wanted):
+                n += 1
+                wanted[n-1][0] = n
+        for t in Wanted:
+            Tab5_WantedBut.append(Button(x=0,y=y,thickness=1,text=str(t[1][0]),font=30,w=50,t=str(t[1][0])))
+            Tab5_WantedMoveBut.append(Button(x=55,y=y,thickness=1,text="<",font=30,w=30,t=str(t[1][0])+"up"))
+            Tab5_WantedMoveBut.append(Button(x=80,y=y,thickness=1,text=" >",font=30,w=30,t=str(t[1][0])+"do"))
+            y+=30
+
+#---------------------------------------------------------------------------------------------------------
+# Compare Alliance Function
+# -- given two alliances, tells who is more likely to win and why
+# -- x = 160, y = 145
+#---------------------------------------------------------------------------------------------------------
+def compare():
+    global Tab6_Surface, Tab6_Update, Teams
+    global TXCOLOR, BGCOLOR, INIT_X, INIT_Y
+    global r1, r2, r3, b1, b2, b3
+    global r1o,r1d,r1a,r1bb,r1tb,r1bs,r1ab,r1bo,r1md,r1tp,r1hh,r1hs,r1po,r1pd,r1pa
+    global r2o,r2d,r2a,r2bb,r2tb,r2bs,r2ab,r2bo,r2md,r2tp,r2hh,r2hs,r2po,r2pd,b2pa
+    global r3o,r3d,r3a,r3bb,r3tb,r3bs,r3ab,r3bo,r3md,r3tp,r3hh,r3hs,r3po,r3pd,b3pa
+    global b1o,b1d,b1a,b1bb,b1tb,b1bs,b1ab,b1bo,b1md,b1tp,b1hh,b1hs,b1po,b1pd,b1pa
+    global b2o,b2d,b2a,b2bb,b2tb,b2bs,b2ab,b2bo,b2md,b2tp,b2hh,b2hs,b2po,b2pd,b2pa
+    global b3o,b3d,b3a,b3bb,b3tb,b3bs,b3ab,b3bo,b3md,b3tp,b3hh,b3hs,b3po,b3pd,b3pa
+    global r1po,r2po,r3po,b1po,b2po,b3po,r1pd,r2pd,r3pd,b1pd,b2pd,b3pd,r1pa,r2pa,r3pa,b1pa,b2pa,b3pa
+    global r1t,r2t,r3t,b1t,b2t,b3t
+    global r1ts,r2ts,r3ts,b1ts,b2ts,b3ts
+
+    #draw the surface
+    if Tab6_Update:
+        Tab6_Surface.fill(BGCOLOR)
+        font = pygame.font.Font(None,30)
+        text = font.render(" Red Alliance: ",True,TXCOLOR,BGCOLOR)
+        Tab6_Surface.blit(text,(0,70))
+        text = font.render("Blue Alliance: ",True,TXCOLOR,BGCOLOR)
+        Tab6_Surface.blit(text,(0,220))
+        font = pygame.font.Font(None,12)
+        text = font.render("Team",True,TXCOLOR,BGCOLOR)
+        Tab6_Surface.blit(text,(140,20))
+        text = font.render("Offensive",True,TXCOLOR,BGCOLOR)
+        Tab6_Surface.blit(text,(175,20))
+        text = font.render("Defensive",True,TXCOLOR,BGCOLOR)
+        Tab6_Surface.blit(text,(215,20))
+        text = font.render("Assistive",True,TXCOLOR,BGCOLOR)
+        Tab6_Surface.blit(text,(255,20))
+        text = font.render("%BrdgBaln",True,TXCOLOR,BGCOLOR)
+        Tab6_Surface.blit(text,(305,20))
+        text = font.render("%TeamBaln",True,TXCOLOR,BGCOLOR)
+        Tab6_Surface.blit(text,(365,20))
+        text= font.render("BrdgScore",True,TXCOLOR,BGCOLOR)
+        Tab6_Surface.blit(text,(430,20))
+        text = font.render("AvgBallScore",True,TXCOLOR,BGCOLOR)
+        Tab6_Surface.blit(text,(500,20))
+        text = font.render("AvgBallBottom",True,TXCOLOR,BGCOLOR)
+        Tab6_Surface.blit(text,(570,20))
+        text = font.render("AvgBallMiddle",True,TXCOLOR,BGCOLOR)
+        Tab6_Surface.blit(text,(630,20))
+        text = font.render("AvgBallTop",True,TXCOLOR,BGCOLOR)
+        Tab6_Surface.blit(text,(690,20))
+        text = font.render("%HadHybd",True,TXCOLOR,BGCOLOR)
+        Tab6_Surface.blit(text,(750,20))
+        text = font.render("AvgHybdScore",True,TXCOLOR,BGCOLOR)
+        Tab6_Surface.blit(text,(810,20))
+
+        for Textbox in Tab6_TextBoxes:
+            Textbox.draw(Tab6_Surface)
+
+        # if three teams on an alliance are selection, show their expected values
+        if r1 and r2 and r2:
+            font = pygame.font.Font(None,20)
+            text = font.render("Expected Offensive Score:" + str((r1o*r1po)+(r2o*r2po)+(r3o*r3po)),
+                               True,TXCOLOR,BGCOLOR)
+            Tab6_Surface.blit(text,(100,130))
+            text = font.render("Expected Defensive Score:" + str((r1d*r1pd)+(r2d*r2pd)+(r3d*r3pd)),
+                               True,TXCOLOR,BGCOLOR)
+            Tab6_Surface.blit(text,(100,150))
+            text= font.render("Expected Assistive Score:" + str((r1a*r1pa)+(r2a*r2pa)+(r3a*r3pa)),
+                              True,TXCOLOR,BGCOLOR)
+            Tab6_Surface.blit(text,(100,170))
+        if b1 and b2 and b3:
+            font = pygame.font.Font(None,20)
+            text = font.render("Expected Offensive Score:" + str((b1o*b1po)+(b2o*b2po)+(b3o*b3po)),
+                               True,TXCOLOR,BGCOLOR)
+            Tab6_Surface.blit(text,(100,300))
+            text = font.render("Expected Defensive Score:" + str((b1d*b1pd)+(b2d*b2pd)+(b3d*b3pd)),
+                               True,TXCOLOR,BGCOLOR)
+            Tab6_Surface.blit(text,(100,320))
+            text = font.render("Expected Assistive Score:" + str((b1a*b1pa)+(b2a*b2pa)+(b3a*b3pa)),
+                               True,TXCOLOR,BGCOLOR)
+            Tab6_Surface.blit(text,(100,340))
+        if r1 and r2 and r3 and b1 and b2 and b3:
+            # get standard deviations
+            print "Calculating Probability"
+            dr1 = [] #Differences from mean squared
+            dr2 = []
+            dr3 = []
+            db1 = []
+            db2 = []
+            db3 = []
+            for score in r1ts:
+                dr1.append(((score-r1t)**2)/len(r1ts))
+            for score in r2ts:
+                dr2.append(((score-r2t)**2)/len(r2ts))
+            for score in r3ts:
+                dr3.append(((score-r3t)**2)/len(r3ts))
+            for score in b1ts:
+                db1.append(((score-b1t)**2)/len(b1ts))
+            for score in b2ts:
+                db2.append(((score-b2t)**2)/len(b2ts))
+            for score in b3ts:
+                db3.append(((score-b3t)**2)/len(b3ts))
+            r1st = math.sqrt(sum(dr1))
+            r2st = math.sqrt(sum(dr2))
+            r3st = math.sqrt(sum(dr3))
+            b1st = math.sqrt(sum(db1))
+            b2st = math.sqrt(sum(db2))
+            b3st = math.sqrt(sum(db3))
+            mur = (float(1)/3)*(r1t+r2t+r3t)
+            mub = (float(1)/3)*(b1t+b2t+b3t)
+            rst = math.sqrt((float(1)/9)*(r1st**2+r2st**2+r3st**2))
+            bst = math.sqrt((float(1)/9)*(b1st**2+b2st**2+b3st**2))
+            if mur > mub:
+                zval = (mur-mub)/math.sqrt(rst**2+bst**2)
+                perr = stats.lzprob(zval)
+                font = pygame.font.Font(None,30)
+                text = font.render("Winner: Red Alliance, " + str(100*perr) + "%",True,
+                                   TXCOLOR,BGCOLOR)
+                Tab6_Surface.blit(text,(100,400))
+            else:
+                zval = (mub-mur)/math.sqrt(rst**2+bst**2)
+                perr = stats.lzprob(zval)
+                font = pygame.font.Font(None,30)
+                text = font.render("Winner: Blue Alliance, " + str(100*1-perr) + "%",True,
+                                   TXCOLOR,BGCOLOR)
+                Tab6_Surface.blit(text,(100,400))
+
+        Tab6_Update = False
+
+    #draw the main surface
+    screen.blit(Tab6_Surface,(INIT_X,INIT_Y))
+
+    #check for changes
+    for item in Tab6_TextBoxes:
+        x = item.x+item.cw+item.th+INIT_X
+        y = item.y+.5*item.th+65
+        if x+item.w+.5*item.th>=mpos[0]>=x and y+item.size+.5*item.th-10>=mpos[1]>=y:
+            #click event
+            item.clicked()
+            exists = False
+            for team in Teams:
+                if str(team.number) == str(item.value): # Team exists
+                    exists = True
+                    if item.type == "rtn1": r1 = item.value
+                    if item.type == "rtn2": r2 = item.value
+                    if item.type == "rtn3": r3 = item.value
+                    if item.type == "btn1": b1 = item.value
+                    if item.type == "btn2": b2 = item.value
+                    if item.type == "btn3": b3 = item.value
+            if exists: item.value = 0
+            Tab6_Update = True
+
+    # Get the team names
+    r1 = r2 = r3 = b1 = b2 = b3 = 0
     
+    for Textbox in Tab6_TextBoxes:
+        if Textbox.type == "rt1n":
+            try:
+                r1 = int(Textbox.value)
+            except:
+                "Invalid value"
+        elif Textbox.type == "rt2n":
+            try:
+                r2 = int(Textbox.value)
+            except:
+                "Invalid value"
+        elif Textbox.type == "rt3n":
+            try:
+                r3 = int(Textbox.value)
+            except:
+                "Invalid value"
+        elif Textbox.type == "bt1n":
+            try:
+                b1 = int(Textbox.value)
+            except:
+                "Invalid value"
+        elif Textbox.type == "bt2n":
+            try:
+                b2 = int(Textbox.value)
+            except:
+                "Invalid value"
+        elif Textbox.type == "bt3n":
+            try:
+                b3 = int(Textbox.value)
+            except:
+                "Invalid value"
+
+    for Textbox in Tab6_TextBoxes:
+        if Textbox.type == "rt1o": Textbox.value = r1o
+        elif Textbox.type == "rt1d": Textbox.value = r1d
+        elif Textbox.type == "rt1a": Textbox.value = r1a
+        elif Textbox.type == "r1bb": Textbox.value = r1bb
+        elif Textbox.type == "r1tb": Textbox.value = r1tb
+        elif Textbox.type == "r1bs": Textbox.value = r1bs
+        elif Textbox.type == "r1ab": Textbox.value = r1ab
+        elif Textbox.type == "r1bo": Textbox.value = r1bo
+        elif Textbox.type == "r1md": Textbox.value = r1md
+        elif Textbox.type == "r1tp": Textbox.value = r1tp
+        elif Textbox.type == "r1hh": Textbox.value = r1hh
+        elif Textbox.type == "r1hs": Textbox.value = r1hs
+        
+        elif Textbox.type == "rt2o": Textbox.value = r2o
+        elif Textbox.type == "rt2d": Textbox.value = r2d
+        elif Textbox.type == "rt2a": Textbox.value = r2a
+        elif Textbox.type == "r2bb": Textbox.value = r2bb
+        elif Textbox.type == "r2tb": Textbox.value = r2tb
+        elif Textbox.type == "r2bs": Textbox.value = r2bs
+        elif Textbox.type == "r2ab": Textbox.value = r2ab
+        elif Textbox.type == "r2bo": Textbox.value = r2bo
+        elif Textbox.type == "r2md": Textbox.value = r2md
+        elif Textbox.type == "r2tp": Textbox.value = r2tp
+        elif Textbox.type == "r2hh": Textbox.value = r2hh
+        elif Textbox.type == "r2hs": Textbox.value = r2hs
+        
+        elif Textbox.type == "rt3o": Textbox.value = r3o
+        elif Textbox.type == "rt3d": Textbox.value = r3d
+        elif Textbox.type == "rt3a": Textbox.value = r3a
+        elif Textbox.type == "r3bb": Textbox.value = r3bb
+        elif Textbox.type == "r3tb": Textbox.value = r3tb
+        elif Textbox.type == "r3bs": Textbox.value = r3bs
+        elif Textbox.type == "r3ab": Textbox.value = r3ab
+        elif Textbox.type == "r3bo": Textbox.value = r3bo
+        elif Textbox.type == "r3md": Textbox.value = r3md
+        elif Textbox.type == "r3tp": Textbox.value = r3tp
+        elif Textbox.type == "r3hh": Textbox.value = r3hh
+        elif Textbox.type == "r3hs": Textbox.value = r3hs
+
+        elif Textbox.type == "bt1o": Textbox.value = b1o
+        elif Textbox.type == "bt1d": Textbox.value = b1d
+        elif Textbox.type == "bt1a": Textbox.value = b1a
+        elif Textbox.type == "b1bb": Textbox.value = b1bb
+        elif Textbox.type == "b1tb": Textbox.value = b1tb
+        elif Textbox.type == "b1bs": Textbox.value = b1bs
+        elif Textbox.type == "b1ab": Textbox.value = b1ab
+        elif Textbox.type == "b1bo": Textbox.value = b1bo
+        elif Textbox.type == "b1md": Textbox.value = b1md
+        elif Textbox.type == "b1tp": Textbox.value = b1tp
+        elif Textbox.type == "b1hh": Textbox.value = b1hh
+        elif Textbox.type == "b1hs": Textbox.value = b1hs
+
+        elif Textbox.type == "bt2o": Textbox.value = b2o
+        elif Textbox.type == "bt2d": Textbox.value = b2d
+        elif Textbox.type == "bt2a": Textbox.value = b2a
+        elif Textbox.type == "b2bb": Textbox.value = b2bb
+        elif Textbox.type == "b2tb": Textbox.value = b2tb
+        elif Textbox.type == "b2bs": Textbox.value = b2bs
+        elif Textbox.type == "b2ab": Textbox.value = b2ab
+        elif Textbox.type == "b2bo": Textbox.value = b2bo
+        elif Textbox.type == "b2md": Textbox.value = b2md
+        elif Textbox.type == "b2tp": Textbox.value = b2tp
+        elif Textbox.type == "b2hh": Textbox.value = b2hh
+        elif Textbox.type == "b2hs": Textbox.value = b2hs
+
+        elif Textbox.type == "bt3o": Textbox.value = b3o
+        elif Textbox.type == "bt3d": Textbox.value = b3d
+        elif Textbox.type == "bt3a": Textbox.value = b3a
+        elif Textbox.type == "b3bb": Textbox.value = b3bb
+        elif Textbox.type == "b3tb": Textbox.value = b3tb
+        elif Textbox.type == "b3bs": Textbox.value = b3bs
+        elif Textbox.type == "b3ab": Textbox.value = b3ab
+        elif Textbox.type == "b3bo": Textbox.value = b3bo
+        elif Textbox.type == "b3md": Textbox.value = b3md
+        elif Textbox.type == "b3tp": Textbox.value = b3tp
+        elif Textbox.type == "b3hh": Textbox.value = b3hh
+        elif Textbox.type == "b3hs": Textbox.value = b3hs
+        
+#---------------------------------------------------------------------------------------------------------
+# Alliance Selection Function
+# -- simulates alliance selection of competition
+# -- tracks teams picked and wanted
+#---------------------------------------------------------------------------------------------------------
+def alliance_selection():
+    global Available_Teams, Wanted
+    global Tab7_TextBoxes, Tab7_Scroll, Tab7_Buttons, Tab7_Update, Tab7_Surface
+    global screen, BGCOLOR, TXCOLOR, INIT_X, INIT_Y
+
+    screen.blit(Tab7_Surface,(INIT_X,INIT_Y))
+    # Draw the team numbers on the scroller
+    if Tab7_Update:
+        Tab7_Surface.fill(BGCOLOR)
+        for tb in Tab7_TextBoxes:
+            tb.draw(Tab7_Surface)
+        x = 0
+        y = 5
+        Tab7_Scroll.surface.fill(BGCOLOR)
+        draw_list = []
+        for team in Wanted:
+            for Team in Available_Teams:
+                if int(team[1][0]) == int(Team):
+                    draw_list.append(Team)
+        #print "Draw list: " + str(draw_list)
+        font = pygame.font.Font(None,20)
+        for team in draw_list:
+            text = font.render("Team "+str(team)+"",True,TXCOLOR,BGCOLOR)
+            Tab7_Scroll.surface.blit(text,(x,y))
+            y += 30
+        Tab7_Scroll.draw(Tab7_Surface)
+
+        # start coordinates: (160, 65)
+        x = 0
+        y = 0
+        n = 1
+        font = pygame.font.Font(None, 40)
+        #text = font.render("Matches: ",True, TXCOLOR,BGCOLOR)
+        #Tab7_Surface.blit(text,(510,65))
+        while n < 9:
+            text = font.render(str(n)+":",True,TXCOLOR,BGCOLOR)
+            Tab7_Surface.blit(text,(x,y))
+            y += 40
+            n += 1
+        Tab7_Update = False
+
+        for button in Tab7_Buttons:
+            button.draw(Tab7_Surface)
+
+    #scroller button click detection
+    for button in Tab7_Buttons:
+        if mbut[0] == 1:
+            if button.x<=cmpos[0]<=button.x+button.w and button.y<=cmpos[1]<=button.y+button.h:
+                if button.type == "tlup":
+                    Tab7_Scroll.update(True)
+                    Tab7_Update = True
+                elif button.type == "tldo":
+                    Tab7_Scroll.update(False)
+                    Tab7_Update = True
+
+    # textbox click detection (also, check to see if that team can be selected)
+    for tb in Tab7_TextBoxes:
+        if tb.x+160<=mpos[0]<=tb.x+160+tb.w and tb.y+65<=mpos[1]<=tb.y+65+tb.size:
+            tb.clicked()
+            try: int(tb.value)
+            except: tb.value = 0
+            Tab7_Update = True
+            n = 0
+            while n < len(Available_Teams[n]):
+                if str(tb.value) == str(Available_Teams[n]):
+                    del Available_Teams[n] # so this team can no longer be chosen
+                    break
+                n+=1
+            # if in_there != True: textbox.value = 0
+
+#---------------------------------------------------------------------------------------------------------
+# Main Loop
+# -- runs the awesomeness of the Chadabase
+#---------------------------------------------------------------------------------------------------------
+
+#TaskBar Buttons
+TaskBar_Buttons.append(Button(x=6,y=6,thickness=4,text="New",t="n"))
+TaskBar_Buttons.append(Button(x=81,y=6,thickness=4,text="Open",t="o"))
+TaskBar_Buttons.append(Button(x=176,y=6,thickness=4,text="Save",t="s"))
+TaskBar_Buttons.append(Button(x=263,y=6,thickness=4,text="Import Data",t="i"))
+TaskBar_Buttons.append(Button(x=457,y=6,thickness=4,text="Import Pit Data",t="ip"))
+TaskBar_Buttons.append(Button(x=6,y=100,thickness=4,text="  Teams  ",t="t"))
+TaskBar_Buttons.append(Button(x=6,y=135,thickness=4,text="  Pit  ",t="ps"))
+TaskBar_Buttons.append(Button(x=6,y=170,thickness=4,text="Ranking",t="r"))
+TaskBar_Buttons.append(Button(x=6,y=205,thickness=4,text=" Rank2 ",t="r2"))
+TaskBar_Buttons.append(Button(x=6,y=240,thickness=4,text="Search ",t="se"))
+TaskBar_Buttons.append(Button(x=6,y=275,thickness=4,text="Compare",t="co"))
+TaskBar_Buttons.append(Button(x=6,y=310,thickness=4,text="Choose ",t="ch"))
+
+#Tab1 (TeamData) Stuff
+Tab1_TextBoxes.append(Textbox(x=0,y=0,thickness=1,caption="Team:",t="tnum",clickable=True))
+Tab1_TextBoxes.append(Textbox(x=0,y=35,thickness=1,caption="Matches:",t="nmat",fs=25,w=40))
+Tab1_TextBoxes.append(Textbox(x=0,y=70,thickness=1,caption="Played Offensive:",t="poff",fs=25,w=40))
+Tab1_TextBoxes.append(Textbox(x=0,y=90,thickness=1,caption="Played Defensive:",t="pdef",fs=25,w=40))
+Tab1_TextBoxes.append(Textbox(x=0,y=110,thickness=1,caption="Played Assistive:",t="past",fs=25,w=40))
+Tab1_TextBoxes.append(Textbox(x=0,y=140,thickness=1,caption="Avg Offensive Score:",t="aoff",fs=25,w=40))
+Tab1_TextBoxes.append(Textbox(x=0,y=160,thickness=1,caption="Avg Defensive Score:",t="adef",fs=25,w=40))
+Tab1_TextBoxes.append(Textbox(x=0,y=180,thickness=1,caption="Avg Assistive Score:",t="aast",fs=25,w=40))
+Tab1_TextBoxes.append(Textbox(x=0,y=200,thickness=1,caption="Avg Total Score:",t="atot",fs=25,w=40))
+Tab1_TextBoxes.append(Textbox(x=0,y=240,thickness=1,caption="Avg Weighted Off Score:",t="woff",fs=25,w=50))
+Tab1_TextBoxes.append(Textbox(x=0,y=260,thickness=1,caption="Avg Weighted Def Score:",t="wdef",fs=25,w=50))
+Tab1_TextBoxes.append(Textbox(x=0,y=300,thickness=1,caption="Offensive Rank:",t="roff",fs=25,w=40))
+Tab1_TextBoxes.append(Textbox(x=0,y=320,thickness=1,caption="Defensive Rank:",t="rdef",fs=25,w=40))
+Tab1_TextBoxes.append(Textbox(x=0,y=340,thickness=1,caption="Assistive Rank:",t="rast",fs=25,w=40))
+Tab1_TextBoxes.append(Textbox(x=0,y=360,thickness=1,caption="Total Rank:",t="rtot",fs=25,w=40))
+
+Tab1_TextBoxes.append(Textbox(x=400,y=20,thickness=1,caption="Had Hybrid Mode:",t="hhyb",fs=25,w=40))
+Tab1_TextBoxes.append(Textbox(x=400,y=45,thickness=1,caption="Lowered Bridge in Hybrid:",t="hlbg",fs=25,w=40))
+Tab1_TextBoxes.append(Textbox(x=400,y=65,thickness=1,caption="Assisted in Hybrid:",t="hast",fs=25,w=40))
+Tab1_TextBoxes.append(Textbox(x=400,y=85,thickness=1,caption="Other Hybrid:",t="hoth",fs=25,w=40))
+Tab1_TextBoxes.append(Textbox(x=400,y=110,thickness=1,caption="Average Hybrid Score:",t="ahyb",fs=25,w=40))
+Tab1_TextBoxes.append(Textbox(x=400,y=130,thickness=1,caption="Average Hybrid Low Score:",t="ahbt",fs=25,w=40))
+Tab1_TextBoxes.append(Textbox(x=400,y=150,thickness=1,caption="Average Hybrid Middle Score:",t="ahmd",fs=25,w=40))
+Tab1_TextBoxes.append(Textbox(x=400,y=170,thickness=1,caption="Average Hybrid Top Score:",t="ahtp",fs=25,w=40))
+
+Tab1_TextBoxes.append(Textbox(x=400,y=225,thickness=1,caption="Running/Disabled Percentage:",t="wdis",fs=25,w=40))
+Tab1_TextBoxes.append(Textbox(x=400,y=245,thickness=1,caption="Number of Times Disabled",t="ndis",fs=25,w=40))
+Tab1_TextBoxes.append(Textbox(x=400,y=265,thickness=1,caption="Average Balls Picked Up:",t="publ",fs=25,w=40))
+Tab1_TextBoxes.append(Textbox(x=400,y=285,thickness=1,caption="Average Balls Scored:",t="abal",fs=25,w=40))
+Tab1_TextBoxes.append(Textbox(x=400,y=305,thickness=1,caption="Average Scored on Bottom:",t="abot",fs=25,w=40))
+Tab1_TextBoxes.append(Textbox(x=400,y=325,thickness=1,caption="Average Scored on Middle::",t="amid",fs=25,w=40))
+Tab1_TextBoxes.append(Textbox(x=400,y=345,thickness=1,caption="Average Scored on Top:",t="atop",fs=25,w=40))
+
+Tab1_TextBoxes.append(Textbox(x=400,y=400,thickness=1,caption="Average Number of Bots Balanced With:",t="bgbn",fs=25,w=40))
+Tab1_TextBoxes.append(Textbox(x=400,y=420,thickness=1,caption="Average Bridge Score(elim):",t="atbs",fs=25,w=40))
+Tab1_TextBoxes.append(Textbox(x=400,y=440,thickness=1,caption="Average Bridge Baln Succ:",t="abrb",fs=25,w=40))
+Tab1_TextBoxes.append(Textbox(x=400,y=460,thickness=1,caption="Average Team Brdg Baln Succ:",t="atbb",fs=25,w=40))
+Tab1_TextBoxes.append(Textbox(x=400,y=480,thickness=1,caption="Average Coop Brdg Baln Succ:",t="acbb",fs=25,w=40))
+Tab1_TextBoxes.append(Textbox(x=400,y=500,thickness=1,caption="Average Team Brdg Baln Atmp:",t="atba",fs=25,w=40))
+Tab1_TextBoxes.append(Textbox(x=400,y=520,thickness=1,caption="Average Coop Brdg Baln Atmp:",t="acba",fs=25,w=40))
+Tab1_TextBoxes.append(Textbox(x=400,y=540,thickness=1,caption="Robot Type:",t="rbty",fs=25,w=40))
+
+Tab1_TextBoxes.append(Textbox(x=0,y=425,thickness=1,caption="Average Number of Reg Fouls:",t="hrfl",fs=25,w=40))
+Tab1_TextBoxes.append(Textbox(x=0,y=445,thickness=1,caption="Average Number of Tech Fouls:",t="htfl",fs=25,w=40))
+Tab1_TextBoxes.append(Textbox(x=0,y=465,thickness=1,caption="Defensive:",t="atdf",fs=25,w=40))
+Tab1_TextBoxes.append(Textbox(x=0,y=485,thickness=1,caption="Assistive:",t="atas",fs=25,w=40))
+Tab1_TextBoxes.append(Textbox(x=0,y=505,thickness=1,caption="Received Yellow Card:",t="ryel",fs=25,w=40))
+Tab1_TextBoxes.append(Textbox(x=0,y=525,thickness=1,caption="Received Red Card:",t="rred",fs=25,w=40))
+
+#Tab2 (PitData) Stuff
+Tab2_TextBoxes.append(Textbox(x=0,y=0,thickness=1,caption="Team:",t="tnum",clickable=1))
+Tab2_TextBoxes.append(Textbox(x=0,y=40,thickness=1,caption="Robot Length:",t="rbln",fs=30,w=50))
+Tab2_TextBoxes.append(Textbox(x=0,y=60,thickness=1,caption="Robot Width:",t="rbwd",fs=30,w=50))
+Tab2_TextBoxes.append(Textbox(x=0,y=80,thickness=1,caption="Robot Heigth:",t="rbhg",fs=30,w=50))
+Tab2_TextBoxes.append(Textbox(x=0,y=100,thickness=1,caption="Robot Wieght:",t="rbwg",fs=30,w=50))
+Tab2_TextBoxes.append(Textbox(x=0,y=120,thickness=1,caption="Floor Clearance to Frame:",t="frcr",fs=30,w=50))
+Tab2_TextBoxes.append(Textbox(x=0,y=140,thickness=1,caption="Spacing between the wheels:",t="wlsc",fs=30,w=50))
+Tab2_TextBoxes.append(Textbox(x=0,y=160,thickness=1,caption="Ability to lower bridge:",t="bgmc",fs=30,w=50))
+Tab2_TextBoxes.append(Textbox(x=0,y=180,thickness=1,caption="Traction on Bridge:",t="sdbg",fs=30,w=50))
+Tab2_TextBoxes.append(Textbox(x=0,y=200,thickness=1,caption="Has a sensor for balance:",t="blsn",fs=30,w=50))
+Tab2_TextBoxes.append(Textbox(x=0,y=220,thickness=1,caption="Has gear shifting system:",t="sggr",fs=30,w=50))
+Tab2_TextBoxes.append(Textbox(x=0,y=260,thickness=1,caption="Type of Drive System:",t="dvsy",fs=30,w=50))
+Tab2_TextBoxes.append(Textbox(x=0,y=280,thickness=1,caption="Center of Mass:",t="cnms",fs=30,w=50))
+Tab2_TextBoxes.append(Textbox(x=0,y=300,thickness=1,caption="Do they have a Drive Team:",t="dri1",fs=30,w=50))
+Tab2_TextBoxes.append(Textbox(x=0,y=320,thickness=1,caption="How many years have they played:",t="exp1",fs=30,w=50))
+Tab2_TextBoxes.append(Textbox(x=0,y=360,thickness=1,caption="Do they have a second Drive team:",t="dri2",fs=30,w=50))
+Tab2_TextBoxes.append(Textbox(x=0,y=380,thickness=1,caption="How many years have they played:",t="exp2",fs=30,w=50))
+Tab2_TextBoxes.append(Textbox(x=0,y=420,thickness=1,caption="Do they have a third  Drive team:",t="dri3",fs=30,w=50))
+Tab2_TextBoxes.append(Textbox(x=0,y=440,thickness=1,caption="How many years have they played:",t="exp3",fs=30,w=50))
+
+#Tab3 (Ranking) Stuff
+Tab3_Scrolls.append(Scroller(pygame.Surface((143,2000)),maxHeight=500,x=160,y=105,t="")) #Offensive Score Scroller
+Tab3_Buttons.append(Button(x=160,y=85,thickness=1,text="",t="ofup",w=143,h=20)) #scroll offensive score up
+Tab3_Buttons.append(Button(x=160,y=605,thickness=1,text="",t="ofdo",w=143,h=20)) #scroll offensive score down
+Tab3_Scrolls.append(Scroller(pygame.Surface((143,2000)),maxHeight=500,x=305,y=105,t="")) #Defensive Score Scroller
+Tab3_Buttons.append(Button(x=305,y=85,thickness=1,text="",t="deup",w=143,h=20))#scroll defensive score up
+Tab3_Buttons.append(Button(x=305,y=605,thickness=1,text="",t="dedo",w=143,h=20))#scroll defensive score down
+Tab3_Scrolls.append(Scroller(pygame.Surface((143,2000)),maxHeight=500,x=455,y=105,t="")) #Assistive Score Scroller
+Tab3_Buttons.append(Button(x=455,y=85,thickness=1,text="",t="atup",w=143,h=20))#scroll assistive score up
+Tab3_Buttons.append(Button(x=455,y=605,thickness=1,text="",t="atdo",w=143,h=20))#scroll assistive score down
+Tab3_Scrolls.append(Scroller(pygame.Surface((143,2000)),maxHeight=500,x=605,y=105,t="")) #Total Score Scroller
+Tab3_Buttons.append(Button(x=605,y=85,thickness=1,text="",t="toup",w=143,h=20))#scroll total score up
+Tab3_Buttons.append(Button(x=605,y=605,thickness=1,text="",t="todo",w=143,h=20))#scroll total score down
+
+#Tab4 (Ranking2) Stuff
+Tab4_Scrolls.append(Scroller(pygame.Surface((143,2000)),maxHeight=500,x=160,y=105,t="")) #Offensive Score Scroller
+Tab4_Buttons.append(Button(x=160,y=85,thickness=1,text="",t="hyup",w=143,h=20)) #scroll offensive score up
+Tab4_Buttons.append(Button(x=160,y=605,thickness=1,text="",t="hydo",w=143,h=20)) #scroll offensive score down
+Tab4_Scrolls.append(Scroller(pygame.Surface((143,2000)),maxHeight=500,x=305,y=105,t="")) #Defensive Score Scroller
+Tab4_Buttons.append(Button(x=305,y=85,thickness=1,text="",t="teup",w=143,h=20))#scroll defensive score up
+Tab4_Buttons.append(Button(x=305,y=605,thickness=1,text="",t="tedo",w=143,h=20))#scroll defensive score down
+Tab4_Scrolls.append(Scroller(pygame.Surface((143,2000)),maxHeight=500,x=455,y=105,t="")) #Assistive Score Scroller
+Tab4_Buttons.append(Button(x=455,y=85,thickness=1,text="",t="bgup",w=143,h=20))#scroll assistive score up
+Tab4_Buttons.append(Button(x=455,y=605,thickness=1,text="",t="bgdo",w=143,h=20))#scroll assistive score down
+
+#Tab5 (Search) Stuff
+Tab5_Stuff.append(Textbox(x=160,y=65,thickness=1,caption="Offensive Score >= ",clickable=1,val=-30,fs=30,w=50,t="goff"))
+Tab5_Stuff.append(Textbox(x=160,y=95,thickness=1,caption="Defensive Score >= ",clickable=1,val=-30,fs=30,w=50,t="gdef"))
+Tab5_Stuff.append(Textbox(x=160,y=125,thickness =1,caption="Assistive Score >= ",clickable=1,val=-30,fs=30,w=50,t="gast"))
+Tab5_Stuff.append(Checkbox(x=160,y=155,fs=30,caption="Played Offensive",t="wo"))
+Tab5_Stuff.append(Checkbox(x=160,y=185,fs=30,caption="Played Defensive",t="wd"))
+Tab5_Stuff.append(Checkbox(x=160,y=215,fs=30,caption="Played Assistive",t="wa"))
+Tab5_Stuff.append(Checkbox(x=160,y=245,fs=30,caption="Scored in Hybrid",t="hasd"))
+Tab5_Stuff.append(Checkbox(x=160,y=275,fs=30,caption="Lowered Brdg in Hybrid",t="hylb"))
+Tab5_Stuff.append(Checkbox(x=160,y=305,fs=30,caption="Assisted in Hybrid",t="hyat"))
+Tab5_Stuff.append(Checkbox(x=160,y=335,fs=30,caption="Balanced a Bridge",t="bdsc"))
+Tab5_Stuff.append(Checkbox(x=160,y=365,fs=30,caption="Balanced Team Bridge",t="tbsc"))
+Tab5_Stuff.append(Checkbox(x=160,y=395,fs=30,caption="Balanced Coop Bridge",t="cbsc"))
+Tab5_Stuff.append(Checkbox(x=160,y=425,fs=30,caption="Never Disabled",t="disn"))
+Tab5_Stuff.append(Checkbox(x=160,y=455,fs=30,caption="No Regular Fouls",t="nrfl"))
+Tab5_Stuff.append(Checkbox(x=160,y=485,fs=30,caption="No Technical Fouls",t="ntfl"))
+Tab5_Stuff.append(Checkbox(x=160,y=515,fs=30,caption="No Yellow Cards",t="noye"))
+Tab5_Stuff.append(Checkbox(x=160,y=545,fs=30,caption="No Red Cards",t="nore"))
+#tab 4's scroller
+Tab5_Scroll = Scroller(pygame.Surface((100,2000)),maxHeight=400,x=510,y=105,t="")
+Tab5_WantScroll = Scroller(pygame.Surface((110,2000)),maxHeight=400,x=630,y=105,t="")
+#tab 4 buttons
+Tab5_Buttons.append(Button(x=510,y=84,thickness=1,text="",t="tlup",w=100,h=20))
+Tab5_Buttons.append(Button(x=510,y=510,thickness=1,text="",t="tldo",w=100,h=20))
+Tab5_Buttons.append(Button(x=630,y=84,thickness=1,text="",t="wlup",w=110,h=20))
+Tab5_Buttons.append(Button(x=630,y=510,thickness=1,text="",t="wldo",w=110,h=20))
+
+#Tab6 (Compare) Stuff
+Tab6_TextBoxes.append(Textbox(x=140,y=40,thickness=1,caption="",clickable=1,fs=20,w=30,t="rt1n"))  #Red alliance, team 1's number
+Tab6_TextBoxes.append(Textbox(x=140,y=70,thickness=1,caption="",clickable=1,fs=20,w=30,t="rt2n"))  #Red alliamce, team 2's number
+Tab6_TextBoxes.append(Textbox(x=140,y=100,thickness=1,caption="",clickable=1,fs=20,w=30,t="rt3n")) #Red alliance, team 3's number
+Tab6_TextBoxes.append(Textbox(x=175,y=40,thickness=1,caption="",fs=20,w=50,t="rt1o"))    #Red alliance, team 1's offensive score
+Tab6_TextBoxes.append(Textbox(x=175,y=70,thickness=1,caption="",fs=20,w=50,t="rt2o"))    #Red alliance, team 2's offensive score
+Tab6_TextBoxes.append(Textbox(x=175,y=100,thickness=1,caption="",fs=20,w=50,t="rt3o"))   #Red alliance, team 3's offensive score
+Tab6_TextBoxes.append(Textbox(x=215,y=40,thickness=1,caption="",fs=20,w=50,t="rt1d"))    #Red alliance, team 1's defensive score
+Tab6_TextBoxes.append(Textbox(x=215,y=70,thickness=1,caption="",fs=20,w=50,t="rt2d"))    #Red alliance, team 2's defensive score
+Tab6_TextBoxes.append(Textbox(x=215,y=100,thickness=1,caption="",fs=20,w=50,t="rt3d"))   #Red alliance, team 3's defensive score
+Tab6_TextBoxes.append(Textbox(x=255,y=40,thickness=1,caption="",fs=20,w=50,t="rt1a"))    #Red alliance, team 1's assistive score
+Tab6_TextBoxes.append(Textbox(x=255,y=70,thickness=1,caption="",fs=20,w=50,t="rt2a"))    #Red alliance, team 2's assistive score
+Tab6_TextBoxes.append(Textbox(x=255,y=100,thickness=1,caption="",fs=20,w=50,t="rt3a"))   #Red alliance, team 3's assistive score
+Tab6_TextBoxes.append(Textbox(x=305,y=40,thickness=1,caption="",fs=20,w=50,t="r1bb"))    #Red alliance, team 1 balance bridge
+Tab6_TextBoxes.append(Textbox(x=305,y=70,thickness=1,caption="",fs=20,w=50,t="r2bb"))    #Red alliance, team 2 balance bridge
+Tab6_TextBoxes.append(Textbox(x=305,y=100,thickness=1,caption="",fs=20,w=50,t="r3bb"))   #Red alliance, team 3 balance bridge
+Tab6_TextBoxes.append(Textbox(x=365,y=40,thickness=1,caption="",fs=20,w=50,t="r1tb"))    #Red alliance, team 1 balance team bridge
+Tab6_TextBoxes.append(Textbox(x=365,y=70,thickness=1,caption="",fs=20,w=50,t="r2tb"))    #Red alliance, team 2 balance team bridge
+Tab6_TextBoxes.append(Textbox(x=365,y=100,thickness=1,caption="",fs=20,w=50,t="r3tb"))   #Red alliance, team 3 balance team bridge
+Tab6_TextBoxes.append(Textbox(x=430,y=40,thickness=1,caption="",fs=20,w=50,t="r1bs"))    #Red alliance, team 1 bridge score
+Tab6_TextBoxes.append(Textbox(x=430,y=70,thickness=1,caption="",fs=20,w=50,t="r2bs"))    #Red alliance, team 2 bridge score
+Tab6_TextBoxes.append(Textbox(x=430,y=100,thickness=1,caption="",fs=20,w=50,t="r3bs"))   #Red alliance, team 3 bridge score
+Tab6_TextBoxes.append(Textbox(x=500,y=40,thickness=1,caption="",fs=20,w=50,t="r1ab"))    #Red alliance, team 1 Average balls scored
+Tab6_TextBoxes.append(Textbox(x=500,y=70,thickness=1,caption="",fs=20,w=50,t="r2ab"))    #Red alliance, team 2 Average balls scored
+Tab6_TextBoxes.append(Textbox(x=500,y=100,thickness=1,caption="",fs=20,w=50,t="r3ab"))   #Red alliance, team 3 Average balls scored
+Tab6_TextBoxes.append(Textbox(x=570,y=40,thickness=1,caption="",fs=20,w=50,t="r1bo"))    #Red alliance, team 1 Average balls bottom
+Tab6_TextBoxes.append(Textbox(x=570,y=70,thickness=1,caption="",fs=20,w=50,t="r2bo"))    #Red alliance, team 2 Average balls bottom
+Tab6_TextBoxes.append(Textbox(x=570,y=100,thickness=1,caption="",fs=20,w=50,t="r3bo"))   #Red alliance, team 3 Average balls bottom
+Tab6_TextBoxes.append(Textbox(x=630,y=40,thickness=1,caption="",fs=20,w=50,t="r1md"))    #Red alliance, team 1 Average balls middle
+Tab6_TextBoxes.append(Textbox(x=630,y=70,thickness=1,caption="",fs=20,w=50,t="r2md"))    #Red alliance, team 2 Average balls middle
+Tab6_TextBoxes.append(Textbox(x=630,y=100,thickness=1,caption="",fs=20,w=50,t="r3md"))   #Red alliance, team 3 Average balls middle
+Tab6_TextBoxes.append(Textbox(x=690,y=40,thickness=1,caption="",fs=20,w=50,t="r1tp"))    #Red alliance, team 1 Average balls top
+Tab6_TextBoxes.append(Textbox(x=690,y=70,thickness=1,caption="",fs=20,w=50,t="r2tp"))    #Red alliance, team 2 Average balls top
+Tab6_TextBoxes.append(Textbox(x=690,y=100,thickness=1,caption="",fs=20,w=50,t="r3tp"))   #Red alliance, team 3 Average balls top
+Tab6_TextBoxes.append(Textbox(x=750,y=40,thickness=1,caption="",fs=20,w=50,t="r1hh"))    #Red alliance, team 1 had hybrid
+Tab6_TextBoxes.append(Textbox(x=750,y=70,thickness=1,caption="",fs=20,w=50,t="r2hh"))    #Red alliance, team 2 had hybrid
+Tab6_TextBoxes.append(Textbox(x=750,y=100,thickness=1,caption="",fs=20,w=50,t="r3hh"))   #Red alliance, team 3 had hybrid
+Tab6_TextBoxes.append(Textbox(x=810,y=40,thickness=1,caption="",fs=20,w=50,t="r1hs"))    #Red alliance, team 1 hybrid score
+Tab6_TextBoxes.append(Textbox(x=810,y=70,thickness=1,caption="",fs=20,w=50,t="r2hs"))    #Red alliance, team 2 hybrid score
+Tab6_TextBoxes.append(Textbox(x=810,y=100,thickness=1,caption="",fs=20,w=50,t="r3hs"))   #Red alliance, team 3 hybrid score
+Tab6_TextBoxes.append(Textbox(x=140,y=200,thickness=1,caption="",clickable=1,fs=20,w=30,t="bt1n")) #Blue alliance, team 1's number
+Tab6_TextBoxes.append(Textbox(x=140,y=230,thickness=1,caption="",clickable=1,fs=20,w=30,t="bt2n")) #blue alliamce, team 2's number
+Tab6_TextBoxes.append(Textbox(x=140,y=260,thickness=1,caption="",clickable=1,fs=20,w=30,t="bt3n")) #blue alliance, team 3's number
+Tab6_TextBoxes.append(Textbox(x=175,y=200,thickness=1,caption="",fs=20,w=50,t="bt1o"))   #blue alliance, team 1's offensive score
+Tab6_TextBoxes.append(Textbox(x=175,y=230,thickness=1,caption="",fs=20,w=50,t="bt2o"))   #blue alliance, team 2's offensive score
+Tab6_TextBoxes.append(Textbox(x=175,y=260,thickness=1,caption="",fs=20,w=50,t="bt3o"))   #blue alliance, team 3's offensive score
+Tab6_TextBoxes.append(Textbox(x=215,y=200,thickness=1,caption="",fs=20,w=50,t="bt1d"))   #blue alliance, team 1's defensive score
+Tab6_TextBoxes.append(Textbox(x=215,y=230,thickness=1,caption="",fs=20,w=50,t="bt2d"))   #blue alliance, team 2's defensive score
+Tab6_TextBoxes.append(Textbox(x=215,y=260,thickness=1,caption="",fs=20,w=50,t="bt3d"))   #blue alliance, team 3's defensive score
+Tab6_TextBoxes.append(Textbox(x=255,y=200,thickness=1,caption="",fs=20,w=50,t="bt1a"))   #blue alliance, team 1's assistive score
+Tab6_TextBoxes.append(Textbox(x=255,y=230,thickness=1,caption="",fs=20,w=50,t="bt2a"))   #blue alliance, team 2's assistive score
+Tab6_TextBoxes.append(Textbox(x=255,y=260,thickness=1,caption="",fs=20,w=50,t="bt3a"))   #blue alliance, team 3's assistive score
+Tab6_TextBoxes.append(Textbox(x=305,y=200,thickness=1,caption="",fs=20,w=50,t="b1bb"))   #blue alliance, team 1 balanced bridge
+Tab6_TextBoxes.append(Textbox(x=305,y=230,thickness=1,caption="",fs=20,w=50,t="b2bb"))   #blue alliance, team 2 balanced bridge
+Tab6_TextBoxes.append(Textbox(x=305,y=260,thickness=1,caption="",fs=20,w=50,t="b3bb"))   #blue alliance, team 3 balanced bridge
+Tab6_TextBoxes.append(Textbox(x=365,y=200,thickness=1,caption="",fs=20,w=50,t="b1tb"))   #blue alliance, team 1 balanced team bridge
+Tab6_TextBoxes.append(Textbox(x=365,y=230,thickness=1,caption="",fs=20,w=50,t="b2tb"))   #blue alliance, team 2 balanced team bridge
+Tab6_TextBoxes.append(Textbox(x=365,y=260,thickness=1,caption="",fs=20,w=50,t="b3tb"))   #blue alliance, team 3 balanced team bridge
+Tab6_TextBoxes.append(Textbox(x=430,y=200,thickness=1,caption="",fs=20,w=50,t="b1bs"))   #blue alliance, team 1 bridge score
+Tab6_TextBoxes.append(Textbox(x=430,y=230,thickness=1,caption="",fs=20,w=50,t="b2bs"))   #blue alliance, team 2 bridge score
+Tab6_TextBoxes.append(Textbox(x=430,y=260,thickness=1,caption="",fs=20,w=50,t="b3bs"))   #blue alliance, team 3 bridge score
+Tab6_TextBoxes.append(Textbox(x=500,y=200,thickness=1,caption="",fs=20,w=50,t="b1ab"))   #blue alliance, team 1 Average balls scored
+Tab6_TextBoxes.append(Textbox(x=500,y=230,thickness=1,caption="",fs=20,w=50,t="b2ab"))   #blue alliance, team 2 Average balls scored
+Tab6_TextBoxes.append(Textbox(x=500,y=260,thickness=1,caption="",fs=20,w=50,t="b3ab"))   #blue alliance, team 3 Average balls scored
+Tab6_TextBoxes.append(Textbox(x=570,y=200,thickness=1,caption="",fs=20,w=50,t="b1bo"))   #blue alliance, team 1 Average balls bottom
+Tab6_TextBoxes.append(Textbox(x=570,y=230,thickness=1,caption="",fs=20,w=50,t="b2bo"))   #blue alliance, team 2 Average balls bottom
+Tab6_TextBoxes.append(Textbox(x=570,y=260,thickness=1,caption="",fs=20,w=50,t="b3bo"))   #blue alliance, team 3 Average balls bottom
+Tab6_TextBoxes.append(Textbox(x=630,y=200,thickness=1,caption="",fs=20,w=50,t="b1md"))   #blue alliance, team 1 Average balls middle
+Tab6_TextBoxes.append(Textbox(x=630,y=230,thickness=1,caption="",fs=20,w=50,t="b2md"))   #blue alliance, team 2 Average balls middle
+Tab6_TextBoxes.append(Textbox(x=630,y=260,thickness=1,caption="",fs=20,w=50,t="b3md"))   #blue alliance, team 3 Average balls middle
+Tab6_TextBoxes.append(Textbox(x=690,y=200,thickness=1,caption="",fs=20,w=50,t="b1tp"))   #blue alliance, team 1 Average balls top
+Tab6_TextBoxes.append(Textbox(x=690,y=230,thickness=1,caption="",fs=20,w=50,t="b2tp"))   #blue alliance, team 2 Average balls top
+Tab6_TextBoxes.append(Textbox(x=690,y=260,thickness=1,caption="",fs=20,w=50,t="b3tp"))   #blue alliance, team 3 Average balls top
+Tab6_TextBoxes.append(Textbox(x=750,y=200,thickness=1,caption="",fs=20,w=50,t="b1hh"))   #blue alliance, team 1 had hybrid 
+Tab6_TextBoxes.append(Textbox(x=750,y=230,thickness=1,caption="",fs=20,w=50,t="b2hh"))   #blue alliance, team 2 had hybrid
+Tab6_TextBoxes.append(Textbox(x=750,y=260,thickness=1,caption="",fs=20,w=50,t="b3hh"))   #blue alliance, team 3 had hybrid
+Tab6_TextBoxes.append(Textbox(x=810,y=200,thickness=1,caption="",fs=20,w=50,t="b1hs"))   #blue alliance, team 1 hybrid score
+Tab6_TextBoxes.append(Textbox(x=810,y=230,thickness=1,caption="",fs=20,w=50,t="b2hs"))   #blue alliance, team 2 hybrid score
+Tab6_TextBoxes.append(Textbox(x=810,y=260,thickness=1,caption="",fs=20,w=50,t="b3hs"))   #blue alliance, team 3 hybrid score
+screen.fill(BGCOLOR)
+
+#Tab7 (Alliance Selection) Stuff
+Tab7_TextBoxes.append(Textbox(x=100,y=5,thickness=1,caption="",fs=40,w=50,t="a1t1",clickable=1)) # alliance 1, team 1
+Tab7_TextBoxes.append(Textbox(x=165,y=5,thickness=1,caption="",fs=40,w=50,t="a1t2",clickable=1)) # alliance 1, team 2
+Tab7_TextBoxes.append(Textbox(x=230,y=5,thickness=1,caption="",fs=40,w=50,t="a1t3",clickable=1)) # alliance 1, team 3
+Tab7_TextBoxes.append(Textbox(x=100,y=45,thickness=1,caption="",fs=40,w=50,t="a2t1",clickable=1)) # alliance 2, team 1
+Tab7_TextBoxes.append(Textbox(x=165,y=45,thickness=1,caption="",fs=40,w=50,t="a2t2",clickable=1)) # alliance 2, team 2
+Tab7_TextBoxes.append(Textbox(x=230,y=45,thickness=1,caption="",fs=40,w=50,t="a2t3",clickable=1)) # alliance 2, team 3
+Tab7_TextBoxes.append(Textbox(x=100,y=85,thickness=1,caption="",fs=40,w=50,t="a3t1",clickable=1)) # alliance 3, team 1
+Tab7_TextBoxes.append(Textbox(x=165,y=85,thickness=1,caption="",fs=40,w=50,t="a3t2",clickable=1)) # alliance 3, team 2
+Tab7_TextBoxes.append(Textbox(x=230,y=85,thickness=1,caption="",fs=40,w=50,t="a3t3",clickable=1)) # alliance 3, team 3
+Tab7_TextBoxes.append(Textbox(x=100,y=125,thickness=1,caption="",fs=40,w=50,t="a4t1",clickable=1)) # alliance 4, team 1
+Tab7_TextBoxes.append(Textbox(x=165,y=125,thickness=1,caption="",fs=40,w=50,t="a4t2",clickable=1)) # alliance 4, team 2
+Tab7_TextBoxes.append(Textbox(x=230,y=125,thickness=1,caption="",fs=40,w=50,t="a4t3",clickable=1)) # alliance 4, team 3
+Tab7_TextBoxes.append(Textbox(x=100,y=165,thickness=1,caption="",fs=40,w=50,t="a1t1",clickable=1)) # alliance 5, team 1
+Tab7_TextBoxes.append(Textbox(x=165,y=165,thickness=1,caption="",fs=40,w=50,t="a1t2",clickable=1)) # alliance 5, team 2
+Tab7_TextBoxes.append(Textbox(x=230,y=165,thickness=1,caption="",fs=40,w=50,t="a1t3",clickable=1)) # alliance 5, team 3
+Tab7_TextBoxes.append(Textbox(x=100,y=205,thickness=1,caption="",fs=40,w=50,t="a2t1",clickable=1)) # alliance 6, team 1
+Tab7_TextBoxes.append(Textbox(x=165,y=205,thickness=1,caption="",fs=40,w=50,t="a2t2",clickable=1)) # alliance 6, team 2
+Tab7_TextBoxes.append(Textbox(x=230,y=205,thickness=1,caption="",fs=40,w=50,t="a2t3",clickable=1)) # alliance 6, team 3
+Tab7_TextBoxes.append(Textbox(x=100,y=245,thickness=1,caption="",fs=40,w=50,t="a3t1",clickable=1)) # alliance 7, team 1
+Tab7_TextBoxes.append(Textbox(x=165,y=245,thickness=1,caption="",fs=40,w=50,t="a3t2",clickable=1)) # alliance 7, team 2
+Tab7_TextBoxes.append(Textbox(x=230,y=245,thickness=1,caption="",fs=40,w=50,t="a3t3",clickable=1)) # alliance 7, team 3
+Tab7_TextBoxes.append(Textbox(x=100,y=285,thickness=1,caption="",fs=40,w=50,t="a4t1",clickable=1)) # alliance 8, team 1
+Tab7_TextBoxes.append(Textbox(x=165,y=285,thickness=1,caption="",fs=40,w=50,t="a4t2",clickable=1)) # alliance 8, team 2
+Tab7_TextBoxes.append(Textbox(x=230,y=285,thickness=1,caption="",fs=40,w=50,t="a4t3",clickable=1)) # alliance 8, team 3
+Tab7_Scroll = Scroller(pygame.Surface((100,2000)),maxHeight=500,x=410,y=25,t="")
+Tab7_Buttons.append(Button(x=410,y=4,thickness=1,text="",t="tlup",w=100,h=20))
+Tab7_Buttons.append(Button(x=410,y=530,thickness=1,text="",t="tldo",w=100,h=20))
+
+
+#Draw Top Bar
+pygame.draw.rect(screen, (0,0,0), (2,2,1276,46),5)
+pygame.draw.rect(screen, (0,0,0), (2,50,1276,10),5)
+for button in TaskBar_Buttons:
+    if button.static == 1:
+        button.draw(screen)
+#draw side bar
+pygame.draw.rect(screen, (0,0,0), (2,60,155,1000),5)
+
+while running:
+    mpos = (-1,-1)  #reset
+    cmpos = pygame.mouse.get_pos()      #current mouse position
+    mbut = pygame.mouse.get_pressed()   #which buttons are pressed
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            print "quit has been pressed"
+            running = False
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            mpos = pygame.mouse.get_pos()
+            for button in TaskBar_Buttons:
+                if mpos[0]>=button.x and mpos[0]<=button.x+button.w and mpos[1]>=button.y and mpos[1]<=button.y+button.h:
+                    button.click()
+    key = pygame.key.get_pressed()
+    if key[pygame.K_ESCAPE]:
+        print "escape has been pressed"
+        running = False
+    #draw the tab
+    tcount += 1
+    go = False
+    if tcount == skip:
+        tcount = 0
+        go = True
+    if go:
+        screen.fill(BGCOLOR,[INIT_X,INIT_Y,WIDTH-INIT_X,HEIGHT-INIT_Y])
+        if tab == 1:
+            team_data()
+        elif tab == 2:
+            team_pitdata()
+        elif tab == 3:
+            ratings()
+        elif tab == 4:
+            ratings2()
+        elif tab == 5:
+            search()
+            #present list of teams that meet criteria on right, if needed to update
+            if Tab5_Update:
+                y =5
+                Team_List.sort()
+                Tab5_TempButton = []
+                Tab5_TempCB = []
+                for team in Team_List:
+                    # add buttons to the list
+                    Tab5_TempButton.append(Button(x=0,y=y,thickness=1,text=str(team[0]),font=30,w=50,t=str(team[0])))
+                    Tab5_TempCB.append(Checkbox(x=55,y=y,caption=[],flip=1,t=str(team[0]),fs=30,teamnum=team[0]))
+                    y += 30
+        elif tab == 6:
+            compare()
+        elif tab == 7:
+            alliance_selection()
+    pygame.display.flip()
+
+    if running:
+        NewFPS = pygame.time.get_ticks()
+        print str(1000/(NewFPS-LastFPS))
+        LastFPS = NewFPS
